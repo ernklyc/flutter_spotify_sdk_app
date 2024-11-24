@@ -11,7 +11,7 @@ import 'package:spotify_sdk/models/player_state.dart'; // Spotify çalar durumu 
 Future<void> main() async {
   // .env dosyasından çevresel değişkenleri yüklüyoruz
   await dotenv.load(fileName: 'assets/.env');
-  runApp(SpotifyApp()); // Ana uygulamayı başlatıyoruz
+  runApp(const SpotifyApp()); // Ana uygulamayı başlatıyoruz
 }
 
 // Ana uygulama widget'ı
@@ -20,11 +20,14 @@ class SpotifyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Uygulama için MaterialApp widget'ını oluşturuyoruz
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // Debug banner'ını kaldırıyoruz
-      theme: ThemeData.dark(), // Karanlık tema kullanıyoruz
-      home: SpotifyHomePage(), // Ana sayfa olarak SpotifyHomePage'i ayarlıyoruz
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData.dark().copyWith(
+        primaryColor: const Color(0xFF1DB954), // Spotify yeşili
+        scaffoldBackgroundColor: Colors.black,
+        cardColor: const Color(0xFF282828),
+      ),
+      home: const SpotifyHomePage(),
     );
   }
 }
@@ -38,88 +41,276 @@ class SpotifyHomePage extends StatefulWidget {
 }
 
 class _SpotifyHomePageState extends State<SpotifyHomePage> {
-  bool _connected = false; // Spotify'a bağlı olup olmadığımızı belirten değişken
+  bool _connected = false;
+  bool _isPlaying = false; // Müziğin çalıp çalmadığını takip etmek için
 
   @override
   void initState() {
     super.initState();
-    // Uygulama başlatıldığında Spotify'a bağlanmayı deneyebilirsiniz
-    // openAndConnectToSpotify();
+    // Başlangıçta müzik durumunu kontrol et
+    checkPlaybackState();
+  }
+
+  // Müzik durumunu kontrol eden fonksiyon
+  Future<void> checkPlaybackState() async {
+    if (_connected) {
+      try {
+        var playerState = await SpotifySdk.getPlayerState();
+        setState(() {
+          _isPlaying = playerState?.isPaused == false;
+        });
+      } catch (e) {
+        print("Müzik durumu alınamadı: $e");
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Spotify Kontrol Paneli"), // Uygulamanın başlık çubuğu
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0), // Etrafında boşluk olan bir yapı
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch, // Bileşenleri genişlet
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Spotify uygulamasını açmak ve bağlanmak için bir düğme
-            ElevatedButton(
-              onPressed: openAndConnectToSpotify,
-              child: const Text("Spotify'ı Aç ve Bağlan"),
-            ),
-            const SizedBox(height: 20), // Boşluk eklemek için
-            // O anda çalan şarkının bilgilerini göstermek için StreamBuilder
-            StreamBuilder<PlayerState>(
-              stream: SpotifySdk.subscribePlayerState(), // Spotify çalar durumunu dinliyoruz
-              builder: (context, snapshot) {
-                // Eğer veri yoksa veya şarkı bilgisi alınamıyorsa
-                if (!snapshot.hasData || snapshot.data?.track == null) {
-                  return const Text("Müzik bilgisi alınamıyor...");
-                }
-                // O anda çalan şarkının bilgilerini alıyoruz
-                var track = snapshot.data!.track!;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start, // Metinleri sola hizala
-                  children: [
-                    // Şarkının adını göster
-                    Text(
-                      "Çalan: ${track.name}",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    // Sanatçının adını göster
-                    Text(
-                      "Sanatçı: ${track.artist.name}",
-                      style: TextStyle(fontSize: 16),
-                    ),
-                    // Albüm adını göster
-                    Text(
-                      "Albüm: ${track.album.name}",
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  ],
-                );
-              },
-            ),
-            const SizedBox(height: 20), // Boşluk eklemek için
-            // Müzik duraklatmak için bir düğme (Spotify'a bağlıysa etkin)
-            ElevatedButton(
-              onPressed: _connected ? playMusic : null,
-              child: const Text("Müziği Çal"),
-            ),
-            const SizedBox(height: 10), // Boşluk eklemek için
-            ElevatedButton(
-              onPressed: _connected ? pauseMusic : null,
-              child: const Text("Müziği Duraklat"),
-            ),
-            const SizedBox(height: 10), // Boşluk eklemek için
-            // Sonraki müziğe geçmek için bir düğme (Spotify'a bağlıysa etkin)
-            ElevatedButton(
-              onPressed: _connected ? skipNext : null,
-              child: const Text("Sonraki Müzik"),
-            ),
-            const SizedBox(height: 10), // Boşluk eklemek için
-            // Önceki müziğe geçmek için bir düğme (Spotify'a bağlıysa etkin)
-            ElevatedButton(
-              onPressed: _connected ? skipPrevious : null,
-              child: const Text("Önceki Müzik"),
+            Image.network(
+              'https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_RGB_White.png',
+              height: 25,
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.music_note),
             ),
           ],
+        ),
+        backgroundColor: Colors.black,
+        elevation: 0,
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFF1DB954).withOpacity(0.5), // Daha belirgin yeşil
+              Colors.black.withOpacity(0.8),
+              Colors.black,
+            ],
+            stops: const [0.0, 0.4, 0.8],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Card(
+                elevation: 12,
+                color: Colors.black.withOpacity(0.7),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(40.0),
+                  child: StreamBuilder<PlayerState>(
+                    stream: SpotifySdk.subscribePlayerState(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData || snapshot.data?.track == null) {
+                        return const Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.music_off,
+                                  size: 48, color: Colors.grey),
+                              SizedBox(height: 16),
+                              Text(
+                                "Müzik bilgisi alınamıyor...",
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      var track = snapshot.data!.track!;
+                      String? imageUrl = track.imageUri.raw;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (imageUrl != null) ...[
+                            Center(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(15),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.3),
+                                      blurRadius: 15,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(15),
+                                  child: Image.network(
+                                    imageUrl.replaceFirst('spotify:image:',
+                                        'https://i.scdn.co/image/'),
+                                    height: 240,
+                                    width: 240,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        height: 240,
+                                        width: 240,
+                                        color: Colors.grey[900],
+                                        child: const Icon(
+                                          Icons.music_note,
+                                          size: 64,
+                                          color: Colors.white54,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1DB954)
+                                  .withOpacity(0.2), // Daha belirgin arka plan
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: const Color(0xFF1DB954)
+                                    .withOpacity(0.4), // Daha belirgin kenar
+                                width: 1,
+                              ),
+                            ),
+                            child: const Text(
+                              "ŞUAN ÇALIYOR",
+                              style: TextStyle(
+                                color: Color(0xFF1DB954), // Tam yeşil renk
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            track.name,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            track.artist.name ?? '',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey[300],
+                              letterSpacing: 0.3,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            track.album.name ?? '',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[500],
+                              letterSpacing: 0.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 40),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF1DB954).withOpacity(0),
+                      blurRadius: 20,
+                      spreadRadius: -5,
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.skip_previous, size: 44),
+                      onPressed: _connected ? skipPrevious : null,
+                      color: _connected ? Colors.white : Colors.grey[700],
+                      splashColor: const Color(0xFF1DB954).withOpacity(1),
+                      splashRadius: 30,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline, size: 44),
+                      onPressed: _connected
+                          ? () {
+                              print("Artı butonuna basıldı");
+                            }
+                          : null,
+                      color: _connected ? Colors.white : Colors.grey[700],
+                      splashColor: const Color(0xFF1DB954).withOpacity(1),
+                      splashRadius: 30,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.skip_next, size: 44),
+                      onPressed: _connected ? skipNext : null,
+                      color: _connected ? Colors.white : Colors.grey[700],
+                      splashColor: const Color(0xFF1DB954).withOpacity(1),
+                      splashRadius: 30,
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              ElevatedButton.icon(
+                onPressed: openAndConnectToSpotify,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _connected
+                      ? const Color(0xFF1DB954) // Tam yeşil
+                      : const Color(0xFFE22134).withOpacity(0.9),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  elevation: 8,
+                  shadowColor: _connected
+                      ? const Color(0xFF1DB954)
+                          .withOpacity(0.6) // Daha belirgin gölge
+                      : const Color(0xFFE22134).withOpacity(0.4),
+                ),
+                icon: Icon(_connected ? Icons.check_circle : Icons.music_note),
+                label: Text(
+                  _connected ? "Bağlantı Aktif" : "Spotify'a Bağlan",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -128,54 +319,33 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
   /// Spotify uygulamasını aç ve bağlan
   Future<void> openAndConnectToSpotify() async {
     try {
-      // Spotify uygulamasını açmak için URL'yi başlatıyoruz
       const url = 'spotify://';
       if (await canLaunch(url)) {
-        await launch(url); // Uygulama başarılı şekilde başlatıldı
+        await launch(url);
       } else {
         print("Spotify uygulaması açılamıyor. Yüklü mü?");
       }
 
-      // Kısa bir bekleme ekliyoruz (isteğe bağlı)
-      await Future.delayed(Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 2));
 
-      // Spotify'a bağlanmak için SDK fonksiyonunu çağırıyoruz
       bool result = await SpotifySdk.connectToSpotifyRemote(
-        clientId: dotenv.env['CLIENT_ID']!, // CLIENT_ID çevresel değişkeni
-        redirectUrl: dotenv.env['REDIRECT_URL']!, // REDIRECT_URL çevresel değişkeni
+        clientId: dotenv.env['CLIENT_ID']!,
+        redirectUrl: dotenv.env['REDIRECT_URL']!,
       );
-      // Bağlantı durumunu güncelliyoruz
+
       setState(() {
         _connected = result;
       });
+
       if (result) {
         print("Spotify'a başarılı şekilde bağlanıldı!");
+        // Bağlantı başarılı olunca müzik durumunu kontrol et
+        await checkPlaybackState();
       } else {
         print("Spotify'a bağlanılamadı.");
       }
     } on PlatformException catch (e) {
-      // Bağlantı hatalarını yakalıyoruz ve ekrana yazdırıyoruz
       print("Bağlantı hatası: ${e.message}");
-    }
-  }
-
-  /// Müzik duraklatma
-  Future<void> playMusic() async {
-    try {
-      // Spotify'da müziği duraklat
-      await SpotifySdk.resume();
-    } catch (e) {
-      print("Müzik duraklatılamadı: $e");
-    }
-  }
-
-  /// Müzik duraklatma
-  Future<void> pauseMusic() async {
-    try {
-      // Spotify'da müziği duraklat
-      await SpotifySdk.pause();
-    } catch (e) {
-      print("Müzik duraklatılamadı: $e");
     }
   }
 
