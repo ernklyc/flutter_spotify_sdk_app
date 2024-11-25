@@ -36,7 +36,7 @@ class SpotifyHomePage extends StatefulWidget {
 
 class _SpotifyHomePageState extends State<SpotifyHomePage> {
   static const spotifyGreen = Color(0xFF1DB954);
-  
+
   bool _connected = false;
   bool _isPlaying = false;
   StreamSubscription<PlayerState>? _playerStateSubscription;
@@ -136,7 +136,6 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
     );
   }
 
-
   Future<void> skipNext() async {
     try {
       await SpotifySdk.skipNext();
@@ -152,7 +151,6 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
       _showError('Önceki şarkıya geçilemedi');
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -351,63 +349,36 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
                     ),
                   ),
                   Container(
+                    padding: const EdgeInsets.only(
+                      bottom: 16,
+                      top: 0,
+                      left: 30,
+                      right: 30,
+                    ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(15),
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(30),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF1DB954).withOpacity(0),
-                          blurRadius: 20,
-                          spreadRadius: -5,
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 15,
+                          spreadRadius: 1,
                         ),
                       ],
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.skip_previous, size: 44),
+                        _buildSecondaryControlButton(
+                          icon: Icons.skip_previous_rounded,
                           onPressed: _connected ? skipPrevious : null,
-                          color: _connected ? Colors.white : Colors.grey[700],
-                          splashColor: const Color(0xFF1DB954).withOpacity(1),
-                          splashRadius: 30,
                         ),
-                        IconButton(
-                          icon: Icon(
-                            _isPlaying
-                                ? Icons.pause_circle_filled
-                                : Icons.play_circle_filled,
-                            size: 44,
-                          ),
-                          onPressed: _connected
-                              ? () async {
-                                  try {
-                                    if (_isPlaying) {
-                                      await SpotifySdk.pause();
-                                    } else {
-                                      await SpotifySdk.resume();
-                                    }
-                                    setState(() {
-                                      _isPlaying = !_isPlaying;
-                                    });
-                                  } catch (e) {
-                                    if (kDebugMode) {
-                                      print("Müzik kontrolü hatası: $e");
-                                    }
-                                  }
-                                }
-                              : null,
-                          color: _connected ? Colors.white : Colors.grey[700],
-                          splashColor: const Color(0xFF1DB954).withOpacity(1),
-                          splashRadius: 30,
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.skip_next, size: 44),
+                        const SizedBox(width: 16),
+                        _buildPrimaryControlButton(),
+                        const SizedBox(width: 16),
+                        _buildSecondaryControlButton(
+                          icon: Icons.skip_next_rounded,
                           onPressed: _connected ? skipNext : null,
-                          color: _connected ? Colors.white : Colors.grey[700],
-                          splashColor: const Color(0xFF1DB954).withOpacity(1),
-                          splashRadius: 30,
                         ),
                       ],
                     ),
@@ -426,51 +397,59 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
                                 }
                               : null,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1DB954),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            backgroundColor:
+                                const Color(0xFF1DB954).withOpacity(0.9),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
+                              borderRadius: BorderRadius.circular(15),
                             ),
+                            elevation: 4,
                           ),
-                          icon: const Icon(Icons.map_outlined,
-                              color: Colors.white),
+                          icon: const Icon(
+                            Icons.map_outlined,
+                            color: Colors.white,
+                            size: 18,
+                          ),
                           label: const Text(
                             "Haritaya Ekle",
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 14,
+                              fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8), // Butonlar arası boşluk
+                      const SizedBox(width: 8),
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: _connected
                               ? () {
                                   if (kDebugMode) {
                                     print(
-                                      "Sevdiğim şarkılara ekle butonuna basıldı");
+                                        "Sevdiğim şarkılara ekle butonuna basıldı");
                                   }
                                 }
                               : null,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1DB954),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            backgroundColor:
+                                const Color(0xFF1DB954).withOpacity(0.9),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
+                              borderRadius: BorderRadius.circular(15),
                             ),
+                            elevation: 4,
                           ),
                           icon: const Icon(
                             Icons.favorite_border,
                             color: Colors.white,
+                            size: 18,
                           ),
                           label: const Text(
-                            "Favorilere Ekle",
+                            "Profile Ekle",
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 14,
+                              fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -478,33 +457,35 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 20),
+                    padding: const EdgeInsets.only(bottom: 16),
                     child: ElevatedButton.icon(
                       onPressed: openAndConnectToSpotify,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _connected
-                            ? const Color(0xFF1DB954)
+                            ? const Color(0xFF1DB954).withOpacity(0.9)
                             : const Color(0xFFE22134).withOpacity(0.9),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
+                          borderRadius: BorderRadius.circular(15),
                         ),
-                        elevation: 8,
+                        elevation: 4,
                         shadowColor: _connected
-                            ? const Color(0xFF1DB954).withOpacity(0.6)
+                            ? const Color(0xFF1DB954).withOpacity(0.4)
                             : const Color(0xFFE22134).withOpacity(0.4),
                       ),
                       icon: Icon(
-                          _connected ? Icons.check_circle : Icons.music_note),
+                        _connected ? Icons.check_circle : Icons.music_note,
+                        size: 18,
+                      ),
                       label: Text(
                         _connected
                             ? "Bağlantı Aktif"
                             : "Spotify'a Bağlan ve Müzik Çal",
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 13,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.5,
                         ),
@@ -514,6 +495,77 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSecondaryControlButton({
+    required IconData icon,
+    VoidCallback? onPressed,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(50),
+        child: Container(
+          padding: const EdgeInsets.all(5),
+          child: Icon(
+            icon,
+            size: 32,
+            color: _connected ? Colors.white : Colors.grey[700],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPrimaryControlButton() {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _connected
+            ? () async {
+                try {
+                  if (_isPlaying) {
+                    await SpotifySdk.pause();
+                  } else {
+                    await SpotifySdk.resume();
+                  }
+                  setState(() => _isPlaying = !_isPlaying);
+                } catch (e) {
+                  debugPrint("Müzik kontrolü hatası: $e");
+                }
+              }
+            : null,
+        splashColor: Colors.transparent,
+        borderRadius: BorderRadius.circular(5),
+        child: Container(
+          padding: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFF1DB954),
+                const Color(0xFF1DB954).withOpacity(0.8),
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1DB954).withOpacity(0.3),
+                blurRadius: 15,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Icon(
+            _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+            size: 35,
+            color: Colors.white,
           ),
         ),
       ),
