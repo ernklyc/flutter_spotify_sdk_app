@@ -121,8 +121,8 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
                         stream: SpotifySdk.subscribePlayerState(),
                         builder: (context, snapshot) {
                           // Müzik durumunu kontrol et ama doğrudan atama yapma
-                          bool isCurrentlyPlaying = snapshot.hasData && 
-                                     snapshot.data?.isPaused == false;
+                          bool isCurrentlyPlaying = snapshot.hasData &&
+                              snapshot.data?.isPaused == false;
 
                           if (!snapshot.hasData ||
                               snapshot.data?.track == null) {
