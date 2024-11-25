@@ -1,138 +1,158 @@
-// Gerekli paketleri import ediyoruz
-import 'dart:async'; // Asenkron işlemler için Dart paketi
-import 'package:flutter/material.dart'; // Flutter UI bileşenleri için
-import 'package:flutter_dotenv/flutter_dotenv.dart'; // Çevresel değişkenleri .env dosyasından yüklemek için
-import 'package:spotify_sdk/spotify_sdk.dart'; // Spotify SDK'sı ile etkileşim kurmak için
-import 'package:flutter/services.dart'; // Platform spesifik hataları yakalamak için
-import 'package:url_launcher/url_launcher.dart'; // URL'leri başlatmak ve Spotify uygulamasını açmak için
-import 'package:spotify_sdk/models/player_state.dart'; // Spotify çalar durumu modeli
+import 'dart:async' show StreamSubscription;
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:spotify_sdk/spotify_sdk.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:spotify_sdk/models/player_state.dart';
 
-// Uygulamanın giriş noktası (main fonksiyonu)
-Future<void> main() async {
-  // .env dosyasından çevresel değişkenleri yüklüyoruz
+void main() async {
   await dotenv.load(fileName: 'assets/.env');
-  runApp(const SpotifyApp()); // Ana uygulamayı başlatıyoruz
+  runApp(const SpotifyApp());
 }
 
-// Ana uygulama widget'ı
 class SpotifyApp extends StatelessWidget {
   const SpotifyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        primaryColor: const Color(0xFF1DB954), // Spotify yeşili
-        scaffoldBackgroundColor: Colors.black,
-        cardColor: const Color(0xFF282828),
-      ),
-      home: const SpotifyHomePage(),
-    );
-  }
+  Widget build(BuildContext context) => MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData.dark().copyWith(
+          primaryColor: const Color(0xFF1DB954),
+          scaffoldBackgroundColor: Colors.black,
+          cardColor: const Color(0xFF282828),
+        ),
+        home: const SpotifyHomePage(),
+      );
 }
 
-// Spotify uygulamasının ana sayfası (StatefulWidget)
 class SpotifyHomePage extends StatefulWidget {
   const SpotifyHomePage({super.key});
 
   @override
-  _SpotifyHomePageState createState() => _SpotifyHomePageState();
+  State<SpotifyHomePage> createState() => _SpotifyHomePageState();
 }
 
 class _SpotifyHomePageState extends State<SpotifyHomePage> {
+  static const spotifyGreen = Color(0xFF1DB954);
+  
   bool _connected = false;
   bool _isPlaying = false;
-  StreamSubscription<PlayerState>?
-      _playerStateSubscription; // Stream aboneliği için
+  StreamSubscription<PlayerState>? _playerStateSubscription;
 
   @override
   void initState() {
     super.initState();
-    checkPlaybackState();
-    _initializePlayerState(); // Player state stream'ini başlat
+    _initializeSpotify();
   }
 
   @override
   void dispose() {
-    _playerStateSubscription?.cancel(); // Stream aboneliğini iptal et
+    _playerStateSubscription?.cancel();
     super.dispose();
   }
 
-  // Player state stream'ini başlat
+  Future<void> _initializeSpotify() async {
+    await _initializePlayerState();
+    await _checkConnectionStatus();
+  }
+
   Future<void> _initializePlayerState() async {
     try {
-      _playerStateSubscription =
-          SpotifySdk.subscribePlayerState().listen((playerState) {
-        if (mounted) {
-          setState(() {
-            _isPlaying = !playerState.isPaused;
-          });
-        }
-      }, onError: (e) {
-        print("Player state stream hatası: $e");
-      });
+      _playerStateSubscription = SpotifySdk.subscribePlayerState().listen(
+        _onPlayerStateChanged,
+        onError: (e) => debugPrint('Player state stream hatası: $e'),
+      );
     } catch (e) {
-      print("Player state stream başlatılamadı: $e");
+      debugPrint('Player state stream başlatılamadı: $e');
     }
   }
 
-  // Spotify bağlantı fonksiyonunu güncelle
+  void _onPlayerStateChanged(PlayerState state) {
+    if (!mounted) return;
+    setState(() {
+      _isPlaying = !state.isPaused;
+    });
+  }
+
+  Future<void> _checkConnectionStatus() async {
+    try {
+      final playerState = await SpotifySdk.getPlayerState();
+      if (mounted) {
+        setState(() => _connected = playerState != null);
+      }
+    } catch (e) {
+      debugPrint('Bağlantı durumu kontrol edilemedi: $e');
+    }
+  }
+
   Future<void> openAndConnectToSpotify() async {
     try {
-      const url = 'spotify://';
-      if (await canLaunch(url)) {
-        await launch(url);
-      } else {
-        print("Spotify uygulaması açılamıyor. Yüklü mü?");
+      const spotifyUrl = 'spotify://';
+      // ignore: deprecated_member_use
+      if (!await canLaunch(spotifyUrl)) {
+        _showError('Spotify uygulaması yüklü değil');
         return;
       }
 
+      // ignore: deprecated_member_use
+      await launch(spotifyUrl);
       await Future.delayed(const Duration(seconds: 2));
 
-      bool result = await SpotifySdk.connectToSpotifyRemote(
+      final connected = await SpotifySdk.connectToSpotifyRemote(
         clientId: dotenv.env['CLIENT_ID']!,
         redirectUrl: dotenv.env['REDIRECT_URL']!,
       );
 
-      if (result) {
-        print("Spotify'a başarılı şekilde bağlanıldı!");
-        var playerState = await SpotifySdk.getPlayerState();
-
-        setState(() {
-          _connected = true;
-          _isPlaying = playerState?.isPaused == false;
-        });
-
-        // Bağlantı başarılı olduktan sonra stream'i yeniden başlat
-        await _initializePlayerState();
+      if (connected) {
+        await _initializeSpotify();
+        _showSuccess('Spotify\'a bağlanıldı');
       } else {
-        setState(() {
-          _connected = false;
-        });
-        print("Spotify'a bağlanılamadı.");
+        _showError('Spotify\'a bağlanılamadı');
       }
     } on PlatformException catch (e) {
-      print("Bağlantı hatası: ${e.message}");
-      setState(() {
-        _connected = false;
-      });
+      _showError('Bağlantı hatası: ${e.message}');
     }
   }
 
-  // Müzik durumunu kontrol eden fonksiyon
-  Future<void> checkPlaybackState() async {
-    if (_connected) {
-      try {
-        var playerState = await SpotifySdk.getPlayerState();
-        setState(() {
-          _isPlaying = playerState?.isPaused == false;
-        });
-      } catch (e) {
-        print("Müzik durumu alınamadı: $e");
-      }
+  void _showError(String message) {
+    setState(() => _connected = false);
+    _showSnackBar(message, Colors.red);
+  }
+
+  void _showSuccess(String message) {
+    _showSnackBar(message, spotifyGreen);
+  }
+
+  void _showSnackBar(String message, Color color) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+
+  Future<void> skipNext() async {
+    try {
+      await SpotifySdk.skipNext();
+    } catch (e) {
+      _showError('Sonraki şarkıya geçilemedi');
     }
   }
+
+  Future<void> skipPrevious() async {
+    try {
+      await SpotifySdk.skipPrevious();
+    } catch (e) {
+      _showError('Önceki şarkıya geçilemedi');
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -372,7 +392,9 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
                                       _isPlaying = !_isPlaying;
                                     });
                                   } catch (e) {
-                                    print("Müzik kontrolü hatası: $e");
+                                    if (kDebugMode) {
+                                      print("Müzik kontrolü hatası: $e");
+                                    }
                                   }
                                 }
                               : null,
@@ -398,7 +420,9 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
                         child: ElevatedButton.icon(
                           onPressed: _connected
                               ? () {
-                                  print("Haritaya ekle butonuna basıldı");
+                                  if (kDebugMode) {
+                                    print("Haritaya ekle butonuna basıldı");
+                                  }
                                 }
                               : null,
                           style: ElevatedButton.styleFrom(
@@ -425,8 +449,10 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
                         child: ElevatedButton.icon(
                           onPressed: _connected
                               ? () {
-                                  print(
+                                  if (kDebugMode) {
+                                    print(
                                       "Sevdiğim şarkılara ekle butonuna basıldı");
+                                  }
                                 }
                               : null,
                           style: ElevatedButton.styleFrom(
@@ -492,25 +518,5 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
         ),
       ),
     );
-  }
-
-  /// Sonraki müzik
-  Future<void> skipNext() async {
-    try {
-      // Sonraki şarkıya geç
-      await SpotifySdk.skipNext();
-    } catch (e) {
-      print("Sonraki müziğe geçilemedi: $e");
-    }
-  }
-
-  /// Önceki müzik
-  Future<void> skipPrevious() async {
-    try {
-      // Önceki şarkıya geç
-      await SpotifySdk.skipPrevious();
-    } catch (e) {
-      print("Önceki müziğe geçilemedi: $e");
-    }
   }
 }
