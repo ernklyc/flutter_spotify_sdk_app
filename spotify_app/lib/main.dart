@@ -120,6 +120,10 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
                       child: StreamBuilder<PlayerState>(
                         stream: SpotifySdk.subscribePlayerState(),
                         builder: (context, snapshot) {
+                          // Müzik durumunu kontrol et ama doğrudan atama yapma
+                          bool isCurrentlyPlaying = snapshot.hasData && 
+                                     snapshot.data?.isPaused == false;
+
                           if (!snapshot.hasData ||
                               snapshot.data?.track == null) {
                             return const Center(
@@ -136,6 +140,17 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
                                 ],
                               ),
                             );
+                          }
+
+                          // Eğer durum değiştiyse, Future.microtask ile güncelle
+                          if (_isPlaying != isCurrentlyPlaying) {
+                            Future.microtask(() {
+                              if (mounted) {
+                                setState(() {
+                                  _isPlaying = isCurrentlyPlaying;
+                                });
+                              }
+                            });
                           }
 
                           var track = snapshot.data!.track!;
@@ -427,15 +442,18 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
         redirectUrl: dotenv.env['REDIRECT_URL']!,
       );
 
-      setState(() {
-        _connected = result;
-      });
-
       if (result) {
         print("Spotify'a başarılı şekilde bağlanıldı!");
         // Bağlantı başarılı olunca müzik durumunu kontrol et
-        await checkPlaybackState();
+        var playerState = await SpotifySdk.getPlayerState();
+        setState(() {
+          _connected = result;
+          _isPlaying = playerState?.isPaused == false;
+        });
       } else {
+        setState(() {
+          _connected = false;
+        });
         print("Spotify'a bağlanılamadı.");
       }
     } on PlatformException catch (e) {
