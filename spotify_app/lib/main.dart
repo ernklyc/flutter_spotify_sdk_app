@@ -78,6 +78,10 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
               errorBuilder: (context, error, stackTrace) =>
                   const Icon(Icons.music_note),
             ),
+            Text(
+              "Controlled Center",
+              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 20),
+            ),
           ],
         ),
         backgroundColor: Colors.black,
@@ -96,220 +100,310 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
             stops: const [0.0, 0.4, 0.8],
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Card(
-                elevation: 12,
-                color: Colors.black.withOpacity(0.7),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(40.0),
-                  child: StreamBuilder<PlayerState>(
-                    stream: SpotifySdk.subscribePlayerState(),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData || snapshot.data?.track == null) {
-                        return const Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.music_off,
-                                  size: 48, color: Colors.grey),
-                              SizedBox(height: 16),
-                              Text(
-                                "Müzik bilgisi alınamıyor...",
-                                style: TextStyle(color: Colors.grey),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Card(
+                    elevation: 12,
+                    color: Colors.black.withOpacity(0.7),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(40.0),
+                      child: StreamBuilder<PlayerState>(
+                        stream: SpotifySdk.subscribePlayerState(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData ||
+                              snapshot.data?.track == null) {
+                            return const Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.music_off,
+                                      size: 48, color: Colors.grey),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    "Müzik bilgisi alınamıyor...",
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        );
-                      }
+                            );
+                          }
 
-                      var track = snapshot.data!.track!;
-                      String? imageUrl = track.imageUri.raw;
+                          var track = snapshot.data!.track!;
+                          String? imageUrl = track.imageUri.raw;
 
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (imageUrl != null) ...[
-                            Center(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(15),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.3),
-                                      blurRadius: 15,
-                                      offset: const Offset(0, 8),
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ...[
+                                Center(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(15),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.3),
+                                          blurRadius: 15,
+                                          offset: const Offset(0, 8),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(15),
-                                  child: Image.network(
-                                    imageUrl.replaceFirst('spotify:image:',
-                                        'https://i.scdn.co/image/'),
-                                    height: 240,
-                                    width: 240,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(15),
+                                      child: Image.network(
+                                        imageUrl.replaceFirst('spotify:image:',
+                                            'https://i.scdn.co/image/'),
                                         height: 240,
                                         width: 240,
-                                        color: Colors.grey[900],
-                                        child: const Icon(
-                                          Icons.music_note,
-                                          size: 64,
-                                          color: Colors.white54,
-                                        ),
-                                      );
-                                    },
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                          return Container(
+                                            height: 240,
+                                            width: 240,
+                                            color: Colors.grey[900],
+                                            child: const Icon(
+                                              Icons.music_note,
+                                              size: 64,
+                                              color: Colors.white54,
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                              ],
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1DB954).withOpacity(
+                                      0.2), // Daha belirgin arka plan
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(
+                                    color: const Color(0xFF1DB954).withOpacity(
+                                        0.4), // Daha belirgin kenar
+                                    width: 1,
+                                  ),
+                                ),
+                                child: const Text(
+                                  "ŞUAN ÇALIYOR",
+                                  style: TextStyle(
+                                    color: Color(0xFF1DB954), // Tam yeşil renk
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.2,
                                   ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 24),
-                          ],
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1DB954)
-                                  .withOpacity(0.2), // Daha belirgin arka plan
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: const Color(0xFF1DB954)
-                                    .withOpacity(0.4), // Daha belirgin kenar
-                                width: 1,
+                              const SizedBox(height: 12),
+                              Text(
+                                track.name,
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            child: const Text(
-                              "ŞUAN ÇALIYOR",
-                              style: TextStyle(
-                                color: Color(0xFF1DB954), // Tam yeşil renk
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.2,
+                              const SizedBox(height: 8),
+                              Text(
+                                track.artist.name ?? '',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey[300],
+                                  letterSpacing: 0.3,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
+                              const SizedBox(height: 4),
+                              Text(
+                                track.album.name ?? '',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[500],
+                                  letterSpacing: 0.2,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF1DB954).withOpacity(0),
+                          blurRadius: 20,
+                          spreadRadius: -5,
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.skip_previous, size: 44),
+                          onPressed: _connected ? skipPrevious : null,
+                          color: _connected ? Colors.white : Colors.grey[700],
+                          splashColor: const Color(0xFF1DB954).withOpacity(1),
+                          splashRadius: 30,
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            _isPlaying
+                                ? Icons.pause_circle_filled
+                                : Icons.play_circle_filled,
+                            size: 44,
+                          ),
+                          onPressed: _connected
+                              ? () async {
+                                  try {
+                                    if (_isPlaying) {
+                                      await SpotifySdk.pause();
+                                    } else {
+                                      await SpotifySdk.resume();
+                                    }
+                                    setState(() {
+                                      _isPlaying = !_isPlaying;
+                                    });
+                                  } catch (e) {
+                                    print("Müzik kontrolü hatası: $e");
+                                  }
+                                }
+                              : null,
+                          color: _connected ? Colors.white : Colors.grey[700],
+                          splashColor: const Color(0xFF1DB954).withOpacity(1),
+                          splashRadius: 30,
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.skip_next, size: 44),
+                          onPressed: _connected ? skipNext : null,
+                          color: _connected ? Colors.white : Colors.grey[700],
+                          splashColor: const Color(0xFF1DB954).withOpacity(1),
+                          splashRadius: 30,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // İki butonu yan yana yerleştiriyoruz
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _connected
+                              ? () {
+                                  print("Haritaya ekle butonuna basıldı");
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1DB954),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            track.name,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            track.artist.name ?? '',
+                          icon: const Icon(Icons.map_outlined,
+                              color: Colors.white),
+                          label: const Text(
+                            "Haritaya Ekle",
                             style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.grey[300],
-                              letterSpacing: 0.3,
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            track.album.name ?? '',
+                        ),
+                      ),
+                      const SizedBox(width: 8), // Butonlar arası boşluk
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _connected
+                              ? () {
+                                  print(
+                                      "Sevdiğim şarkılara ekle butonuna basıldı");
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1DB954),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                          ),
+                          icon: const Icon(
+                            Icons.favorite_border,
+                            color: Colors.white,
+                          ),
+                          label: const Text(
+                            "Favorilere Ekle",
                             style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[500],
-                              letterSpacing: 0.2,
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                      );
-                    },
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-              const SizedBox(height: 40),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF1DB954).withOpacity(0),
-                      blurRadius: 20,
-                      spreadRadius: -5,
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: ElevatedButton.icon(
+                      onPressed: openAndConnectToSpotify,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _connected
+                            ? const Color(0xFF1DB954)
+                            : const Color(0xFFE22134).withOpacity(0.9),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        elevation: 8,
+                        shadowColor: _connected
+                            ? const Color(0xFF1DB954).withOpacity(0.6)
+                            : const Color(0xFFE22134).withOpacity(0.4),
+                      ),
+                      icon: Icon(
+                          _connected ? Icons.check_circle : Icons.music_note),
+                      label: Text(
+                        _connected
+                            ? "Bağlantı Aktif"
+                            : "Spotify'a Bağlan ve Müzik Çal",
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ),
-                  ],
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.skip_previous, size: 44),
-                      onPressed: _connected ? skipPrevious : null,
-                      color: _connected ? Colors.white : Colors.grey[700],
-                      splashColor: const Color(0xFF1DB954).withOpacity(1),
-                      splashRadius: 30,
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.add_circle_outline, size: 44),
-                      onPressed: _connected
-                          ? () {
-                              print("Artı butonuna basıldı");
-                            }
-                          : null,
-                      color: _connected ? Colors.white : Colors.grey[700],
-                      splashColor: const Color(0xFF1DB954).withOpacity(1),
-                      splashRadius: 30,
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.skip_next, size: 44),
-                      onPressed: _connected ? skipNext : null,
-                      color: _connected ? Colors.white : Colors.grey[700],
-                      splashColor: const Color(0xFF1DB954).withOpacity(1),
-                      splashRadius: 30,
-                    ),
-                  ],
-                ),
-              ),
-              const Spacer(),
-              ElevatedButton.icon(
-                onPressed: openAndConnectToSpotify,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _connected
-                      ? const Color(0xFF1DB954) // Tam yeşil
-                      : const Color(0xFFE22134).withOpacity(0.9),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
                   ),
-                  elevation: 8,
-                  shadowColor: _connected
-                      ? const Color(0xFF1DB954)
-                          .withOpacity(0.6) // Daha belirgin gölge
-                      : const Color(0xFFE22134).withOpacity(0.4),
-                ),
-                icon: Icon(_connected ? Icons.check_circle : Icons.music_note),
-                label: Text(
-                  _connected ? "Bağlantı Aktif" : "Spotify'a Bağlan",
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
