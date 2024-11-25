@@ -42,13 +42,82 @@ class SpotifyHomePage extends StatefulWidget {
 
 class _SpotifyHomePageState extends State<SpotifyHomePage> {
   bool _connected = false;
-  bool _isPlaying = false; // Müziğin çalıp çalmadığını takip etmek için
+  bool _isPlaying = false;
+  StreamSubscription<PlayerState>?
+      _playerStateSubscription; // Stream aboneliği için
 
   @override
   void initState() {
     super.initState();
-    // Başlangıçta müzik durumunu kontrol et
     checkPlaybackState();
+    _initializePlayerState(); // Player state stream'ini başlat
+  }
+
+  @override
+  void dispose() {
+    _playerStateSubscription?.cancel(); // Stream aboneliğini iptal et
+    super.dispose();
+  }
+
+  // Player state stream'ini başlat
+  Future<void> _initializePlayerState() async {
+    try {
+      _playerStateSubscription =
+          SpotifySdk.subscribePlayerState().listen((playerState) {
+        if (mounted) {
+          setState(() {
+            _isPlaying = !playerState.isPaused;
+          });
+        }
+      }, onError: (e) {
+        print("Player state stream hatası: $e");
+      });
+    } catch (e) {
+      print("Player state stream başlatılamadı: $e");
+    }
+  }
+
+  // Spotify bağlantı fonksiyonunu güncelle
+  Future<void> openAndConnectToSpotify() async {
+    try {
+      const url = 'spotify://';
+      if (await canLaunch(url)) {
+        await launch(url);
+      } else {
+        print("Spotify uygulaması açılamıyor. Yüklü mü?");
+        return;
+      }
+
+      await Future.delayed(const Duration(seconds: 2));
+
+      bool result = await SpotifySdk.connectToSpotifyRemote(
+        clientId: dotenv.env['CLIENT_ID']!,
+        redirectUrl: dotenv.env['REDIRECT_URL']!,
+      );
+
+      if (result) {
+        print("Spotify'a başarılı şekilde bağlanıldı!");
+        var playerState = await SpotifySdk.getPlayerState();
+
+        setState(() {
+          _connected = true;
+          _isPlaying = playerState?.isPaused == false;
+        });
+
+        // Bağlantı başarılı olduktan sonra stream'i yeniden başlat
+        await _initializePlayerState();
+      } else {
+        setState(() {
+          _connected = false;
+        });
+        print("Spotify'a bağlanılamadı.");
+      }
+    } on PlatformException catch (e) {
+      print("Bağlantı hatası: ${e.message}");
+      setState(() {
+        _connected = false;
+      });
+    }
   }
 
   // Müzik durumunu kontrol eden fonksiyon
@@ -78,8 +147,8 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
               errorBuilder: (context, error, stackTrace) =>
                   const Icon(Icons.music_note),
             ),
-            Text(
-              "Controlled Center",
+            const Text(
+              "Controll Center",
               style: TextStyle(fontWeight: FontWeight.w500, fontSize: 20),
             ),
           ],
@@ -423,42 +492,6 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
         ),
       ),
     );
-  }
-
-  /// Spotify uygulamasını aç ve bağlan
-  Future<void> openAndConnectToSpotify() async {
-    try {
-      const url = 'spotify://';
-      if (await canLaunch(url)) {
-        await launch(url);
-      } else {
-        print("Spotify uygulaması açılamıyor. Yüklü mü?");
-      }
-
-      await Future.delayed(const Duration(seconds: 2));
-
-      bool result = await SpotifySdk.connectToSpotifyRemote(
-        clientId: dotenv.env['CLIENT_ID']!,
-        redirectUrl: dotenv.env['REDIRECT_URL']!,
-      );
-
-      if (result) {
-        print("Spotify'a başarılı şekilde bağlanıldı!");
-        // Bağlantı başarılı olunca müzik durumunu kontrol et
-        var playerState = await SpotifySdk.getPlayerState();
-        setState(() {
-          _connected = result;
-          _isPlaying = playerState?.isPaused == false;
-        });
-      } else {
-        setState(() {
-          _connected = false;
-        });
-        print("Spotify'a bağlanılamadı.");
-      }
-    } on PlatformException catch (e) {
-      print("Bağlantı hatası: ${e.message}");
-    }
   }
 
   /// Sonraki müzik
