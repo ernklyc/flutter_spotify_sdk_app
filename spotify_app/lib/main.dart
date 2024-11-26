@@ -88,11 +88,13 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
   Future<void> openAndConnectToSpotify() async {
     try {
       const spotifyUrl = 'spotify://';
+      // ignore: deprecated_member_use
       if (!await canLaunch(spotifyUrl)) {
         _showError('Spotify uygulaması yüklü değil');
         return;
       }
 
+      // ignore: deprecated_member_use
       await launch(spotifyUrl);
       await Future.delayed(const Duration(seconds: 2));
 
@@ -202,70 +204,15 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
                       child: StreamBuilder<PlayerState>(
                         stream: SpotifySdk.subscribePlayerState(),
                         builder: (context, snapshot) {
-                          bool isCurrentlyPlaying = snapshot.hasData &&
-                              snapshot.data?.isPaused == false;
-
                           if (!snapshot.hasData ||
                               snapshot.data?.track == null) {
-                            return Container(
-                              padding: const EdgeInsets.symmetric(vertical: 40),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(20),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Colors.white.withOpacity(0.05),
-                                    ),
-                                    child: Icon(
-                                      Icons.music_off_rounded,
-                                      size: 48,
-                                      color: Colors.grey[400],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 20),
-                                  Text(
-                                    "Müzik Çalmıyor",
-                                    style: TextStyle(
-                                      color: Colors.grey[300],
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    "Spotify'dan bir şarkı başlatın",
-                                    style: TextStyle(
-                                      color: Colors.grey[500],
-                                      fontSize: 14,
-                                      letterSpacing: 0.3,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
+                            return const SizedBox.shrink();
                           }
 
-                          if (_isPlaying != isCurrentlyPlaying) {
-                            Future.microtask(() {
-                              if (mounted) {
-                                setState(() {
-                                  _isPlaying = isCurrentlyPlaying;
-                                });
-                              }
-                            });
-                          }
-
-                          var track = snapshot.data!.track!;
-                          String? imageUrl = track.imageUri.raw;
+                          final duration = snapshot.data?.track?.duration ?? 0;
+                          final position = snapshot.data?.playbackPosition ?? 0;
 
                           return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               ...[
                                 Center(
@@ -283,8 +230,9 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(15),
                                       child: Image.network(
-                                        imageUrl.replaceFirst('spotify:image:',
-                                            'https://i.scdn.co/image/'),
+                                        snapshot.data!.track!.imageUri.raw
+                                            .replaceFirst('spotify:image:',
+                                                'https://i.scdn.co/image/'),
                                         height: 240,
                                         width: 240,
                                         fit: BoxFit.cover,
@@ -332,7 +280,7 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                track.name,
+                                snapshot.data!.track!.name,
                                 style: const TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
@@ -343,7 +291,7 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                track.artist.name ?? '',
+                                snapshot.data!.track!.artist.name ?? '',
                                 style: TextStyle(
                                   fontSize: 18,
                                   color: Colors.grey[300],
@@ -354,7 +302,7 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                track.album.name ?? '',
+                                snapshot.data!.track!.album.name ?? '',
                                 style: TextStyle(
                                   fontSize: 16,
                                   color: Colors.grey[500],
@@ -362,6 +310,14 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 16),
+                              LinearProgressIndicator(
+                                value: duration > 0 ? position / duration : 0.0,
+                                backgroundColor: Colors.grey[800],
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                    Color(0xFF1DB954)),
+                                minHeight: 3,
                               ),
                             ],
                           );
