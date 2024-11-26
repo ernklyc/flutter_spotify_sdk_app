@@ -88,13 +88,11 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
   Future<void> openAndConnectToSpotify() async {
     try {
       const spotifyUrl = 'spotify://';
-      // ignore: deprecated_member_use
       if (!await canLaunch(spotifyUrl)) {
         _showError('Spotify uygulaması yüklü değil');
         return;
       }
 
-      // ignore: deprecated_member_use
       await launch(spotifyUrl);
       await Future.delayed(const Duration(seconds: 2));
 
@@ -204,7 +202,6 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
                       child: StreamBuilder<PlayerState>(
                         stream: SpotifySdk.subscribePlayerState(),
                         builder: (context, snapshot) {
-                          // Müzik durumunu kontrol et ama doğrudan atama yapma
                           bool isCurrentlyPlaying = snapshot.hasData &&
                               snapshot.data?.isPaused == false;
 
@@ -254,7 +251,6 @@ class _SpotifyHomePageState extends State<SpotifyHomePage> {
                             );
                           }
 
-                          // Eğer durum değiştiyse, Future.microtask ile güncelle
                           if (_isPlaying != isCurrentlyPlaying) {
                             Future.microtask(() {
                               if (mounted) {
